@@ -8,6 +8,10 @@ const jwt = require("jsonwebtoken");
 const secret = require("../../config/keys").secret;
 const passport = require("passport");
 
+//load input validation for register and login page
+const validateRegisterInput = require("../../validation/register");
+const validateLoginInput = require("../../validation/login");
+
 // @route  GET api/users/test
 // @desc   Tests users route
 // @access Public
@@ -21,6 +25,12 @@ router.get("/test", async (req, res, next) => {
 // @desc   Register user
 // @access Public
 router.post("/register", async (req, res, next) => {
+  const { errors, isValid } = validateRegisterInput(req.body);
+
+  if (!isValid) {
+    return res.status(400).json(errors);
+  }
+
   try {
     const user = await User.findOne({ email: req.body.email });
     if (user) {
@@ -46,6 +56,12 @@ router.post("/register", async (req, res, next) => {
 // @access Public
 
 router.post("/login", async (req, res, next) => {
+  const { errors, isValid } = validateLoginInput(req.body);
+
+  if (!isValid) {
+    return res.status(400).json(errors);
+  }
+
   const email = req.body.email;
   const password = req.body.password;
 
@@ -53,31 +69,35 @@ router.post("/login", async (req, res, next) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      res.json.status(404).json({ email: "User not found" });
+      errors.email = "User not found";
+      res.status(404).json(errors);
     }
 
-    const isMatch = await comparePassword(password, user.password);
-    if (isMatch) {
-      //user matched & create jwt payload
-      const payload = {
-        id: user.id,
-        name: user.name,
-        avatar: user.avatar
-      };
-      //sign the token
-      const token = await jwt.sign(payload, secret, { expiresIn: 3600 });
-      if (token) {
-        res.json({
-          success: true,
-          token: `Bearer ${token}`
-        });
+    if (user) {
+      const isMatch = await comparePassword(password, user.password);
+      if (isMatch) {
+        //user matched & create jwt payload
+        const payload = {
+          id: user.id,
+          name: user.name,
+          avatar: user.avatar
+        };
+        //sign the token
+        const token = await jwt.sign(payload, secret, { expiresIn: 3600 });
+        if (token) {
+          res.json({
+            success: true,
+            token: `Bearer ${token}`
+          });
+        } else {
+          res.json({
+            message: "Error"
+          });
+        }
       } else {
-        res.json({
-          message: "Error"
-        });
+        errors.password = "Password incorrect";
+        res.status(400).json(errors);
       }
-    } else {
-      res.status(400).json({ password: "Password incorrect" });
     }
   } catch (error) {
     next(error);
