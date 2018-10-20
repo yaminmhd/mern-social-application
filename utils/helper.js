@@ -11,6 +11,15 @@ const encryptPassword = async password => {
   }
 };
 
+const comparePassword = async (passwordFromInput, passwordFromDB) => {
+  try {
+    const isMatch = await bcrypt.compare(passwordFromInput, passwordFromDB);
+    return isMatch;
+  } catch (error) {
+    console.log(`Error caught: ${error}`);
+  }
+};
+
 const retrieveGravatar = email => {
   return gravatar.url(email, {
     s: "200",
@@ -21,5 +30,6 @@ const retrieveGravatar = email => {
 
 module.exports = {
   encryptPassword,
-  retrieveGravatar
+  retrieveGravatar,
+  comparePassword
 };
