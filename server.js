@@ -22,9 +22,11 @@ dbConnection.on("error", () => {
   console.log("Error connecting to database");
 });
 
+app.use(express.json());
 app.use("/api/profiles", profiles);
 app.use("/api/users", users);
 app.use("/api/posts", posts);
+
 
 app.get("/", (req, res) => {
   res.json("Hello");
