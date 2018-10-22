@@ -267,19 +267,19 @@ router.delete(
   "/experience/:exp_id",
   passport.authenticate("jwt", { session: false }),
   async (req, res, next) => {
-
     try {
       const profile = await Profile.findOne({ user: req.user.id });
 
       //get removed index
-      const removeIndex = profile.experience.map(item=> item.id).indexOf(req.params.exp_id)
+      const removeIndex = profile.experience
+        .map(item => item.id)
+        .indexOf(req.params.exp_id);
 
       //splice out of array
       profile.experience.splice(removeIndex, 1);
 
       await profile.save();
       res.json(profile);
-
     } catch (error) {
       next(error);
     }
@@ -293,24 +293,39 @@ router.delete(
   "/education/:edu_id",
   passport.authenticate("jwt", { session: false }),
   async (req, res, next) => {
-
     try {
       const profile = await Profile.findOne({ user: req.user.id });
 
       //get removed index
-      const removeIndex = profile.education.map(item=> item.id).indexOf(req.params.edu_id)
+      const removeIndex = profile.education
+        .map(item => item.id)
+        .indexOf(req.params.edu_id);
 
       //splice out of array
       profile.education.splice(removeIndex, 1);
 
       await profile.save();
       res.json(profile);
-
     } catch (error) {
       next(error);
     }
   }
 );
 
-
+// @route  DELETE api/profiles/
+// @desc   delete user and user'sprofile
+// @access private
+router.delete(
+  "/",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res, next) => {
+    try {
+      await Profile.findOneAndRemove({ user: req.user.id });
+      await User.findOneAndRemove({ _id: req.user.id });
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 module.exports = router;
