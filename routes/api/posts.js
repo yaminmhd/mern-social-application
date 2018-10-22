@@ -170,4 +170,79 @@ router.post(
     }
   }
 );
+
+// @route  POST api/posts/comment/:id
+// @desc   add comment to post
+// @access private
+router.post(
+  "/comment/:id",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res, next) => {
+    const { errors, isValid } = validatePostInput(req.body);
+
+    //check validation
+    if (!isValid) {
+      //if any errors, send 400 with errors object
+      return res.status(400).json(errors);
+    }
+    try {
+      const post = await Post.findById(req.params.id);
+      const newComment = {
+        text: req.body.text,
+        name: req.body.name,
+        avatar: req.body.avatar,
+        user: req.user.id
+      };
+      //add to comment array
+      post.comments.unshift(newComment);
+      await post.save();
+      res.json(post);
+    } catch (error) {
+      res.status(404).json({
+        message: error,
+        nopostfound: "No post found"
+      });
+    }
+  }
+);
+
+// @route  DELETE api/posts/comment/:id/:comment_id
+// @desc   delete comment from post
+// @access private
+router.delete(
+  "/comment/:id/:comment_id",
+  passport.authenticate("jwt", { session: false }),
+  async (req, res, next) => {
+    try {
+      const post = await Post.findById(req.params.id);
+      //check to see if comment exists
+      const checkCommentExist = post.comments.filter(
+        comment => comment._id.toString() === req.params.comment_id
+      );
+
+      if (checkCommentExist.length === 0) {
+        return res.status(404).json({
+          commentnotexists: "Comment does not exist"
+        });
+      }
+
+      //get remove index
+      const removedIndex = post.comments
+        .map(comment => comment._id.toString())
+        .indexOf(req.params.comment_id);
+
+      //splice it out of array
+      post.comments.splice(removedIndex, 1);
+
+      await post.save();
+
+      res.json(post);
+    } catch (error) {
+      res.status(404).json({
+        message: error,
+        nopostfound: "No post found"
+      });
+    }
+  }
+);
 module.exports = router;
